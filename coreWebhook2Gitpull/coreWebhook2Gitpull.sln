@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27130.2020
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "coreWebhook2Gitpull", "coreWebhook2Gitpull\coreWebhook2Gitpull.csproj", "{B418CEEB-3FD1-4312-855D-F8D016059C3C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B418CEEB-3FD1-4312-855D-F8D016059C3C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B418CEEB-3FD1-4312-855D-F8D016059C3C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B418CEEB-3FD1-4312-855D-F8D016059C3C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B418CEEB-3FD1-4312-855D-F8D016059C3C}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {7BFA8FE3-FD04-4A4B-8E20-274E3504CE76}
+	EndGlobalSection
+EndGlobal
