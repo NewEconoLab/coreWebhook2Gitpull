@@ -3,6 +3,8 @@ using Microsoft.Extensions.Configuration;
 //using Microsoft.AspNetCore.WebHooks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System;
+using System.IO;
 
 namespace coreWebhook2Gitpull.Controllers
 {
@@ -35,15 +37,41 @@ namespace coreWebhook2Gitpull.Controllers
             string repoName = J["repository"]["name"].ToString();
             string bashCMD = formatBashCmd(repoName);
 
-            //执行shell命令测试
-            var output = bashCMD.Bash();
-            
-            J.Add("bashCMD", bashCMD);
-            J.Add("bashCMDout", output);
-            string resStr = JsonConvert.SerializeObject(J);
-            System.IO.File.AppendAllTextAsync(System.IO.Directory.GetCurrentDirectory() + "/log/" + System.DateTime.Now.ToString ("yyyyMMddHH") + ".log",resStr);
+            try
+            {
+                //执行shell命令测试
+                var output = bashCMD.Bash();
 
-            return Json(new JObject() { {"repoName",repoName },{ "cmdRes", output} });
+                J.Add("bashCMD", bashCMD);
+                J.Add("bashCMDout", output);
+                string resStr = JsonConvert.SerializeObject(J);
+                return Json(new JObject() { { "repoName", repoName }, { "cmdRes", output }, { "error", "" } });
+            } catch (Exception ex)
+            {
+                log(ex);
+                return Json(new JObject() { { "repoName", repoName }, { "cmdRes", "" }, { "error", ex.Message } });
+            }
+            
+        }
+
+        private void log(Exception ex)
+        {
+            System.Text.StringBuilder msg = new System.Text.StringBuilder();
+            msg.Append("*************************************** \n");
+            msg.AppendFormat(" 异常发生时间： {0} \n", DateTime.Now);
+            msg.AppendFormat(" 异常类型： {0} \n", ex.HResult);
+            msg.AppendFormat(" 导致当前异常的 Exception 实例： {0} \n", ex.InnerException);
+            msg.AppendFormat(" 导致异常的应用程序或对象的名称： {0} \n", ex.Source);
+            msg.AppendFormat(" 引发异常的方法： {0} \n", ex.TargetSite);
+            msg.AppendFormat(" 异常堆栈信息： {0} \n", ex.StackTrace);
+            msg.AppendFormat(" 异常消息： {0} \n", ex.Message);
+
+            string path = Directory.GetCurrentDirectory() + "/log/";
+            if (Directory.Exists(path) == false)
+            {
+                Directory.CreateDirectory(path);
+            }
+            System.IO.File.AppendAllTextAsync(path + DateTime.Now.ToString("yyyyMMddHH") + ".log", msg.ToString());
         }
 
         private string formatBashCmd(string repositoryName)
