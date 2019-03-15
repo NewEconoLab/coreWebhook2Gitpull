@@ -46,7 +46,7 @@ namespace coreWebhook2Gitpull.Controllers
                 J.Add("bashCMDout", output);
                 if(repoName == "DapiDoc")
                 {
-                    var outRes = ConstHelper.getInstance().deployCMD.Bash();
+                    var outRes = formatDeployCmd(repoName).Bash();
                     J.Add("deployCMDout", outRes);
                 }
                 string resStr = JsonConvert.SerializeObject(J);
@@ -83,7 +83,11 @@ namespace coreWebhook2Gitpull.Controllers
         {
             return string.Format(ConstHelper.getInstance().bashCMD, repositoryName);
         }
-        
+        private string formatDeployCmd(string repositoryName)
+        {
+            return string.Format(ConstHelper.getInstance().deployCMD, repositoryName);
+        }
+
     }
 
     class ConstHelper
