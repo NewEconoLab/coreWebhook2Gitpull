@@ -50,7 +50,7 @@ namespace coreWebhook2Gitpull.Controllers
                     J.Add("deployCMDout", outRes);
                 }
                 string resStr = JsonConvert.SerializeObject(J);
-                return Json(new JObject() { { "repoName", repoName }, { "cmdRes", output }, { "error", "" } });
+                return Json(new JObject() { { "repoName", repoName }, { "cmdRes", resStr }, { "error", "" } });
             } catch (Exception ex)
             {
                 log(ex);
