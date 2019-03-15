@@ -44,6 +44,11 @@ namespace coreWebhook2Gitpull.Controllers
 
                 J.Add("bashCMD", bashCMD);
                 J.Add("bashCMDout", output);
+                if(repoName == "DapiDoc")
+                {
+                    var outRes = ConstHelper.getInstance().deployCMD.Bash();
+                    J.Add("deployCMDout", outRes);
+                }
                 string resStr = JsonConvert.SerializeObject(J);
                 return Json(new JObject() { { "repoName", repoName }, { "cmdRes", output }, { "error", "" } });
             } catch (Exception ex)
@@ -84,6 +89,7 @@ namespace coreWebhook2Gitpull.Controllers
     class ConstHelper
     {
         public string bashCMD { get; }
+        public string deployCMD { get; }
         private ConstHelper()
         {
             var config = new ConfigurationBuilder()
@@ -92,6 +98,7 @@ namespace coreWebhook2Gitpull.Controllers
                 .AddJsonFile("settings.json", optional: true, reloadOnChange: true)  //指定加载的配置文件
                 .Build();    //编译成对象  
             bashCMD = config["bashCMD"];
+            deployCMD = config["deployCMD"];
         }
 
         private static ConstHelper instance = new ConstHelper();
