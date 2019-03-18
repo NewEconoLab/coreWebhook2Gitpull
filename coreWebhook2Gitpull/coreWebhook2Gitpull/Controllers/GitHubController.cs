@@ -34,23 +34,27 @@ namespace coreWebhook2Gitpull.Controllers
         [HttpPost]
         public JsonResult Post([FromBody] JObject J)
         {
+            Console.WriteLine("req:"+J.ToString());
             string repoName = J["repository"]["name"].ToString();
-            string bashCMD = formatBashCmd(repoName);
-
+            
             try
             {
-                //执行shell命令测试
-                var output = bashCMD.Bash();
-
-                J.Add("bashCMD", bashCMD);
-                J.Add("bashCMDout", output);
-                if(repoName == "DapiDoc")
+                // DapiDoc
+                string outStr;
+                if(processDapiDocHook(repoName, out outStr))
                 {
-                    var outRes = formatDeployCmd(repoName).Bash();
-                    J.Add("deployCMDout", outRes);
+                    return Json(toRes(repoName, outStr));
                 }
-                string resStr = JsonConvert.SerializeObject(J);
-                return Json(new JObject() { { "repoName", repoName }, { "cmdRes", resStr }, { "error", "" } });
+
+                // General
+                var resJo = new JObject();
+                var bashCMD = formatBashCmd(repoName);
+                var output = bashCMD.Bash();
+                resJo.Add("bashCMD", bashCMD);
+                resJo.Add("bashCMDout", output);
+                outStr = resJo.ToString();
+                
+                return Json(new JObject() { { "repoName", repoName }, { "cmdRes", outStr }, { "error", "" } });
             } catch (Exception ex)
             {
                 log(ex);
@@ -79,6 +83,32 @@ namespace coreWebhook2Gitpull.Controllers
             System.IO.File.AppendAllTextAsync(path + DateTime.Now.ToString("yyyyMMddHH") + ".log", msg.ToString());
         }
 
+
+        private bool processDapiDocHook(string repoName, out string outStr)
+        {
+            if (repoName == "DapiDoc")
+            {
+                var res = new JObject();
+                var cmdStr = formatDeployCmd_CN(repoName);
+                var outRes = cmdStr.Bash();
+                res.Add("cnCmd", cmdStr);
+                res.Add("cnRes", outRes);
+
+                cmdStr = formatDeployCmd_EN(repoName);
+                outRes = cmdStr.Bash();
+                res.Add("enCmd", cmdStr);
+                res.Add("enRes", outRes);
+                outStr = res.ToString();
+                return true;
+            }
+            outStr = "";
+            return false;
+        }
+
+        private JObject toRes(string repoName, string outStr)
+        {
+            return new JObject() { { "repoName", repoName }, { "cmdRes", outStr }, { "error", "" } };
+        }
         private string formatBashCmd(string repositoryName)
         {
             return string.Format(ConstHelper.getInstance().bashCMD, repositoryName);
@@ -87,6 +117,14 @@ namespace coreWebhook2Gitpull.Controllers
         {
             return string.Format(ConstHelper.getInstance().deployCMD, repositoryName);
         }
+        private string formatDeployCmd_CN(string repositoryName)
+        {
+            return string.Format(ConstHelper.getInstance().deployCMD_CN, repositoryName);
+        }
+        private string formatDeployCmd_EN(string repositoryName)
+        {
+            return string.Format(ConstHelper.getInstance().deployCMD_EN, repositoryName);
+        }
 
     }
 
@@ -94,6 +132,8 @@ namespace coreWebhook2Gitpull.Controllers
     {
         public string bashCMD { get; }
         public string deployCMD { get; }
+        public string deployCMD_CN { get; }
+        public string deployCMD_EN { get; }
         private ConstHelper()
         {
             var config = new ConfigurationBuilder()
@@ -103,6 +143,8 @@ namespace coreWebhook2Gitpull.Controllers
                 .Build();    //编译成对象  
             bashCMD = config["bashCMD"];
             deployCMD = config["deployCMD"];
+            deployCMD_CN = config["deployCMD_CN"];
+            deployCMD_EN = config["deployCMD_EN"];
         }
 
         private static ConstHelper instance = new ConstHelper();
