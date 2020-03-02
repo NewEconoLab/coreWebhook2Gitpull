@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using coreWebhook2Gitpull.lib;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 //using Microsoft.AspNetCore.WebHooks;
 using Newtonsoft.Json;
@@ -11,10 +12,7 @@ namespace coreWebhook2Gitpull.Controllers
     [Route("api/[controller]")]
     public class GitHubController : Controller
     {
-        public IActionResult Index()
-        {
-            return View();
-        }
+        private GitHubService service = GitHubService.getService();
 
         [HttpGet]
         public JsonResult Get(){
@@ -39,30 +37,12 @@ namespace coreWebhook2Gitpull.Controllers
             
             try
             {
-                // DapiDoc
-                string outStr;
-                if(processDapiDocHook(repoName, out outStr))
-                {
-                    return Json(toRes(repoName, outStr));
-                }
-                //
-                if(processMultiBranch(repoName, out outStr))
-                {
-                    return Json(toRes(repoName, outStr));
-                }
-                // General
-                var resJo = new JObject();
-                var bashCMD = formatBashCmd(repoName);
-                var output = bashCMD.Bash();
-                resJo.Add("bashCMD", bashCMD);
-                resJo.Add("bashCMDout", output);
-                outStr = resJo.ToString();
-                
-                return Json(new JObject() { { "repoName", repoName }, { "cmdRes", outStr }, { "error", "" } });
+                var outStr = service.processBash(repoName);
+                return Json(toRes(repoName, outStr));
             } catch (Exception ex)
             {
                 log(ex);
-                return Json(new JObject() { { "repoName", repoName }, { "cmdRes", "" }, { "error", ex.Message } });
+                return Json(toErrRes(repoName, ex));
             }
             
         }
@@ -87,106 +67,16 @@ namespace coreWebhook2Gitpull.Controllers
             System.IO.File.AppendAllTextAsync(path + DateTime.Now.ToString("yyyyMMddHH") + ".log", msg.ToString());
         }
 
-
-        private bool processMultiBranch(string repoName, out string outStr)
-        {
-            outStr = "";
-            var dir = ConstHelper.getInstance().serviceDir;
-            if (!Directory.Exists(dir)) return false;
-
-            var flag = false;
-            var index = 0;
-            var ds = Directory.GetDirectories(dir);
-            foreach(var fs in ds)
-            {
-                var oldfs = fs.ToLower();
-                var newfs = repoName.ToLower();
-                if(oldfs.StartsWith(newfs))
-                {
-                    var resJo = new JObject();
-                    var bashCMD = formatBashCmd(fs);
-                    var output = bashCMD.Bash();
-                    resJo["bashCMD" +index] = bashCMD;
-                    resJo["bashCMDout" +index] = output;
-                    outStr = resJo.ToString();
-                    ++index;
-                    flag = true;
-                }
-            }
-            return flag;
-        }
-        private bool processDapiDocHook(string repoName, out string outStr)
-        {
-            if (repoName == "DapiDoc")
-            {
-                var res = new JObject();
-                var cmdStr = formatDeployCmd_CN(repoName);
-                var outRes = cmdStr.Bash();
-                res.Add("cnCmd", cmdStr);
-                res.Add("cnRes", outRes);
-
-                cmdStr = formatDeployCmd_EN(repoName);
-                outRes = cmdStr.Bash();
-                res.Add("enCmd", cmdStr);
-                res.Add("enRes", outRes);
-                outStr = res.ToString();
-                return true;
-            }
-            outStr = "";
-            return false;
-        }
-
         private JObject toRes(string repoName, string outStr)
         {
             return new JObject() { { "repoName", repoName }, { "cmdRes", outStr }, { "error", "" } };
         }
-        private string formatBashCmd(string repositoryName)
+        private JObject toErrRes(string repoName, Exception ex)
         {
-            return string.Format(ConstHelper.getInstance().bashCMD, repositoryName);
-        }
-        private string formatDeployCmd(string repositoryName)
-        {
-            return string.Format(ConstHelper.getInstance().deployCMD, repositoryName);
-        }
-        private string formatDeployCmd_CN(string repositoryName)
-        {
-            return string.Format(ConstHelper.getInstance().deployCMD_CN, repositoryName);
-        }
-        private string formatDeployCmd_EN(string repositoryName)
-        {
-            return string.Format(ConstHelper.getInstance().deployCMD_EN, repositoryName);
-        }
-
-    }
-
-    class ConstHelper
-    {
-        public string bashCMD { get; }
-        public string deployCMD { get; }
-        public string deployCMD_CN { get; }
-        public string deployCMD_EN { get; }
-        public string serviceDir { get; }
-        private ConstHelper()
-        {
-            var config = new ConfigurationBuilder()
-                .AddInMemoryCollection()    //将配置文件的数据加载到内存中
-                .SetBasePath(System.IO.Directory.GetCurrentDirectory())   //指定配置文件所在的目录
-                .AddJsonFile("settings.json", optional: true, reloadOnChange: true)  //指定加载的配置文件
-                .Build();    //编译成对象  
-            bashCMD = config["bashCMD"];
-            deployCMD = config["deployCMD"];
-            deployCMD_CN = config["deployCMD_CN"];
-            deployCMD_EN = config["deployCMD_EN"];
-            serviceDir = config["serviceDir"];
-        }
-
-        private static ConstHelper instance = new ConstHelper();
-        public static ConstHelper getInstance()
-        {
-            return instance;
+            return new JObject() { { "repoName", repoName }, { "cmdRes", "" }, { "error", ex.Message } };
         }
         
 
-
     }
+
 }
