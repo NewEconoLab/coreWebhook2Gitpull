@@ -287,3 +287,5 @@ __pycache__/
 *.odx.cs
 *.xsd.cs
 *.json
+coreWebhook2Gitpull/*.json
+coreWebhook2Gitpull/coreWebhook2Gitpull/*.json
