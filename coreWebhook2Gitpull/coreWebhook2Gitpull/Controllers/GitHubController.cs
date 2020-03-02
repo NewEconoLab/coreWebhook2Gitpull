@@ -45,7 +45,11 @@ namespace coreWebhook2Gitpull.Controllers
                 {
                     return Json(toRes(repoName, outStr));
                 }
-
+                //
+                if(processMultiBranch(repoName, out outStr))
+                {
+                    return Json(toRes(repoName, outStr));
+                }
                 // General
                 var resJo = new JObject();
                 var bashCMD = formatBashCmd(repoName);
@@ -84,6 +88,33 @@ namespace coreWebhook2Gitpull.Controllers
         }
 
 
+        private bool processMultiBranch(string repoName, out string outStr)
+        {
+            outStr = "";
+            var dir = ConstHelper.getInstance().serviceDir;
+            if (!Directory.Exists(dir)) return false;
+
+            var flag = false;
+            var index = 0;
+            var ds = Directory.GetDirectories(dir);
+            foreach(var fs in ds)
+            {
+                var oldfs = fs.ToLower();
+                var newfs = repoName.ToLower();
+                if(oldfs.StartsWith(newfs))
+                {
+                    var resJo = new JObject();
+                    var bashCMD = formatBashCmd(fs);
+                    var output = bashCMD.Bash();
+                    resJo["bashCMD" +index] = bashCMD;
+                    resJo["bashCMDout" +index] = output;
+                    outStr = resJo.ToString();
+                    ++index;
+                    flag = true;
+                }
+            }
+            return flag;
+        }
         private bool processDapiDocHook(string repoName, out string outStr)
         {
             if (repoName == "DapiDoc")
@@ -134,6 +165,7 @@ namespace coreWebhook2Gitpull.Controllers
         public string deployCMD { get; }
         public string deployCMD_CN { get; }
         public string deployCMD_EN { get; }
+        public string serviceDir { get; }
         private ConstHelper()
         {
             var config = new ConfigurationBuilder()
@@ -145,6 +177,7 @@ namespace coreWebhook2Gitpull.Controllers
             deployCMD = config["deployCMD"];
             deployCMD_CN = config["deployCMD_CN"];
             deployCMD_EN = config["deployCMD_EN"];
+            serviceDir = config["serviceDir"];
         }
 
         private static ConstHelper instance = new ConstHelper();
